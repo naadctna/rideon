@@ -11,7 +11,7 @@
                 <h1 class="text-2xl font-bold text-gray-900">Edit Motor</h1>
                 <p class="text-gray-600 mt-1">Perbarui informasi motor {{ $motor->merk }}</p>
             </div>
-            <a href="{{ route('owner.dashboard') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-md transition duration-200">
+            <a href="{{ route('owner.motors') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-md transition duration-200">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                 </svg>
@@ -41,14 +41,29 @@
                 <label for="photo" class="block text-sm font-medium text-gray-700">
                     {{ $motor->photo ? 'Ganti Foto Motor (Opsional)' : 'Foto Motor (Opsional)' }}
                 </label>
-                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-gray-400 transition-colors">
+                
+                <!-- New Photo Preview Area -->
+                <div id="photo-preview" class="mt-1 mb-3 hidden">
+                    <div class="relative inline-block">
+                        <img id="photo-preview-img" src="" alt="Preview" class="h-32 w-32 object-cover rounded-lg border border-gray-300">
+                        <button type="button" id="remove-photo-preview" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">Preview foto baru yang akan diupload</p>
+                </div>
+                
+                <!-- Upload Area -->
+                <div id="photo-upload-area" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-gray-400 transition-colors">
                     <div class="space-y-1 text-center">
                         <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                         <div class="flex text-sm text-gray-600">
                             <label for="photo" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                <span>Upload foto</span>
+                                <span>{{ $motor->photo ? 'Ganti foto' : 'Upload foto' }}</span>
                                 <input id="photo" name="photo" type="file" class="sr-only" accept="image/jpeg,image/png,image/jpg">
                             </label>
                             <p class="pl-1">atau drag and drop</p>
@@ -75,13 +90,16 @@
             <!-- Tipe CC -->
             <div>
                 <label for="tipe_cc" class="block text-sm font-medium text-gray-700">Tipe CC</label>
-                <select name="tipe_cc" id="tipe_cc" required
-                        class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm text-base border-gray-300 rounded-md @error('tipe_cc') border-red-300 @enderror py-3 px-4">
-                    <option value="">Pilih Tipe CC</option>
-                    <option value="100" {{ old('tipe_cc', $motor->tipe_cc) == '100' ? 'selected' : '' }}>100cc</option>
-                    <option value="125" {{ old('tipe_cc', $motor->tipe_cc) == '125' ? 'selected' : '' }}>125cc</option>
-                    <option value="150" {{ old('tipe_cc', $motor->tipe_cc) == '150' ? 'selected' : '' }}>150cc</option>
-                </select>
+                <div class="mt-1 relative">
+                    <input type="number" id="tipe_cc" name="tipe_cc" required min="50" max="2000" step="1"
+                           class="block w-full px-4 py-3 pr-12 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base @error('tipe_cc') border-red-300 @enderror"
+                           placeholder="Contoh: 125, 150, 250"
+                           value="{{ old('tipe_cc', $motor->tipe_cc) }}">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <span class="text-gray-500 text-sm font-medium">cc</span>
+                    </div>
+                </div>
+                <p class="mt-1 text-xs text-gray-500">Masukkan kapasitas mesin motor dalam satuan cc (50-2000cc)</p>
                 @error('tipe_cc')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
@@ -177,24 +195,65 @@
 </div>
 
 <script>
-// Preview uploaded photo
-document.getElementById('photo').addEventListener('change', function(event) {
-    const file = event.target.files[0];
+// Photo Preview Functionality for Edit Form
+document.getElementById('photo').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const previewArea = document.getElementById('photo-preview');
+    const previewImg = document.getElementById('photo-preview-img');
+    const uploadArea = document.getElementById('photo-upload-area');
+    
     if (file) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            alert('Hanya file gambar yang diizinkan (JPG, PNG, JPEG)');
+            this.value = '';
+            return;
+        }
+        
+        // Validate file size (2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ukuran file terlalu besar. Maksimal 2MB');
+            this.value = '';
+            return;
+        }
+        
         const reader = new FileReader();
         reader.onload = function(e) {
-            // Create preview if doesn't exist
-            let preview = document.getElementById('photo-preview');
-            if (!preview) {
-                preview = document.createElement('div');
-                preview.id = 'photo-preview';
-                preview.className = 'mt-2';
-                preview.innerHTML = '<p class="text-sm font-medium text-gray-700 mb-2">Preview:</p><img id="preview-img" class="h-32 w-32 object-cover rounded-lg">';
-                document.querySelector('label[for="photo"]').parentNode.parentNode.appendChild(preview);
-            }
-            document.getElementById('preview-img').src = e.target.result;
+            previewImg.src = e.target.result;
+            previewArea.classList.remove('hidden');
+            uploadArea.classList.add('hidden');
         };
         reader.readAsDataURL(file);
+    }
+});
+
+// Remove Photo Preview
+document.getElementById('remove-photo-preview').addEventListener('click', function() {
+    document.getElementById('photo').value = '';
+    document.getElementById('photo-preview').classList.add('hidden');
+    document.getElementById('photo-upload-area').classList.remove('hidden');
+});
+
+// Drag and Drop functionality for photo
+const photoUploadArea = document.getElementById('photo-upload-area');
+photoUploadArea.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    this.classList.add('border-blue-400', 'bg-blue-50');
+});
+
+photoUploadArea.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    this.classList.remove('border-blue-400', 'bg-blue-50');
+});
+
+photoUploadArea.addEventListener('drop', function(e) {
+    e.preventDefault();
+    this.classList.remove('border-blue-400', 'bg-blue-50');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        document.getElementById('photo').files = files;
+        document.getElementById('photo').dispatchEvent(new Event('change'));
     }
 });
 

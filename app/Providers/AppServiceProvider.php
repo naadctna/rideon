@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Blade;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register PDF alias
+        if (class_exists('Barryvdh\DomPDF\ServiceProvider')) {
+            $this->app->register(\Barryvdh\DomPDF\ServiceProvider::class);
+        }
     }
 }

@@ -10,7 +10,7 @@ class Transaksi extends Model
     use HasFactory;
 
     protected $fillable = [
-        'pemesanan_id',
+        'penyewaan_id',
         'jumlah',
         'metode_pembayaran',
         'status',
@@ -25,6 +25,6 @@ class Transaksi extends Model
     // Relationships
     public function penyewaan()
     {
-        return $this->belongsTo(Penyewaan::class, 'pemesanan_id');
+        return $this->belongsTo(Penyewaan::class, 'penyewaan_id');
     }
 }

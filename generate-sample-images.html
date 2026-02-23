@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+        .motor-image { width: 400px; height: 300px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                      border-radius: 10px; display: flex; align-items: center; justify-content: center; 
+                      color: white; font-size: 24px; font-weight: bold; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="motor-image">
+        Honda Vario 125<br>
+        Sample Image
+    </div>
+    <script>
+        // Convert to image and save
+        const canvas = document.createElement('canvas');
+        canvas.width = 400;
+        canvas.height = 300;
+        const ctx = canvas.getContext('2d');
+        
+        // Create gradient
+        const gradient = ctx.createLinearGradient(0, 0, 400, 300);
+        gradient.addColorStop(0, '#667eea');
+        gradient.addColorStop(1, '#764ba2');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 400, 300);
+        
+        // Add text
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Honda Vario 125', 200, 140);
+        ctx.fillText('Sample Image', 200, 180);
+        
+        // Convert to blob and download
+        canvas.toBlob(function(blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'honda-vario-sample.jpg';
+            a.click();
+        }, 'image/jpeg', 0.9);
+    </script>
+</body>
+</html>

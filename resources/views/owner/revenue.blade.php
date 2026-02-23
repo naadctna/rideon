@@ -11,11 +11,20 @@
                 <h1 class="text-2xl font-bold text-gray-900">Laporan Pendapatan</h1>
                 <p class="text-gray-600 mt-1">Riwayat bagi hasil dari penyewaan motor Anda</p>
             </div>
-            <a href="{{ route('owner.dashboard') }}" class="text-gray-400 hover:text-gray-600">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </a>
+            <div class="flex gap-2">
+                <a href="{{ route('owner.revenue.pdf') }}" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition duration-200">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Unduh PDF
+                </a>
+                <a href="{{ route('owner.dashboard') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition duration-200">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Kembali
+                </a>
+            </div>
         </div>
     </div>
 
@@ -55,59 +64,53 @@
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @foreach($revenues as $revenue)
+                        @if($revenue->transaksi && $revenue->transaksi->penyewaan && $revenue->transaksi->penyewaan->motor)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $revenue->tanggal->format('d/m/Y') }}
+                                {{ $revenue->created_at ? $revenue->created_at->format('d/m/Y') : '-' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
-                                    @if($revenue->penyewaan->motor->photo)
-                                        <img class="h-10 w-10 rounded-lg object-cover" src="{{ asset('storage/' . $revenue->penyewaan->motor->photo) }}" alt="{{ $revenue->penyewaan->motor->merk }}">
+                                    @if($revenue->transaksi->penyewaan->motor->photo)
+                                        <img class="h-10 w-10 rounded-lg object-cover" src="{{ asset('storage/' . $revenue->transaksi->penyewaan->motor->photo) }}" alt="{{ $revenue->transaksi->penyewaan->motor->merk }}">
                                     @else
                                         <div class="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
                                             <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                                <circle cx="12" cy="12" r="9" stroke-width="2"></circle>
+                                                <circle cx="12" cy="12" r="3" stroke-width="2"></circle>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v6m0 6v6m9-9h-6m-6 0H3"></path>
                                             </svg>
                                         </div>
                                     @endif
                                     <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900">{{ $revenue->penyewaan->motor->merk }}</div>
-                                        <div class="text-sm text-gray-500">{{ $revenue->penyewaan->motor->no_plat }} • {{ $revenue->penyewaan->motor->tipe_cc }}cc</div>
+                                        <div class="text-sm font-medium text-gray-900">{{ $revenue->transaksi->penyewaan->motor->merk }}</div>
+                                        <div class="text-sm text-gray-500">{{ $revenue->transaksi->penyewaan->motor->no_plat }} • {{ $revenue->transaksi->penyewaan->motor->tipe_cc }}cc</div>
                                     </div>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">{{ $revenue->penyewaan->penyewa->name }}</div>
-                                <div class="text-sm text-gray-500">{{ $revenue->penyewaan->penyewa->email }}</div>
+                                <div class="text-sm font-medium text-gray-900">{{ $revenue->transaksi->penyewaan->penyewa->name ?? '-' }}</div>
+                                <div class="text-sm text-gray-500">{{ $revenue->transaksi->penyewaan->penyewa->email ?? '-' }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                <div>{{ $revenue->penyewaan->tanggal_mulai->format('d/m/Y') }}</div>
-                                <div class="text-xs text-gray-500">s/d {{ $revenue->penyewaan->tanggal_selesai->format('d/m/Y') }}</div>
+                                <div>{{ $revenue->transaksi->penyewaan->tanggal_mulai ? $revenue->transaksi->penyewaan->tanggal_mulai->format('d/m/Y') : '-' }}</div>
+                                <div class="text-xs text-gray-500">s/d {{ $revenue->transaksi->penyewaan->tanggal_selesai ? $revenue->transaksi->penyewaan->tanggal_selesai->format('d/m/Y') : '-' }}</div>
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 mt-1">
-                                    {{ ucfirst($revenue->penyewaan->tipe_durasi) }}
+                                    {{ ucfirst($revenue->transaksi->penyewaan->tipe_durasi ?? 'harian') }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-semibold text-green-600">
-                                    Rp {{ number_format($revenue->bagi_hasil_pemilik, 0, ',', '.') }}
-                                </div>
-                                <div class="text-xs text-gray-500">
-                                    Admin: Rp {{ number_format($revenue->bagi_hasil_admin, 0, ',', '.') }}
+                                    Rp {{ number_format($revenue->jumlah, 0, ',', '.') }}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                @if($revenue->settled_at)
-                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                        Dibayar
-                                    </span>
-                                    <div class="text-xs text-gray-500 mt-1">{{ $revenue->settled_at->format('d/m/Y H:i') }}</div>
-                                @else
-                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                        Pending
-                                    </span>
-                                @endif
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                    Selesai
+                                </span>
                             </td>
                         </tr>
+                        @endif
                         @endforeach
                     </tbody>
                 </table>

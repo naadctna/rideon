@@ -38,11 +38,39 @@ class Penyewaan extends Model
 
     public function transaksi()
     {
-        return $this->hasOne(Transaksi::class, 'pemesanan_id');
+        return $this->hasOne(Transaksi::class, 'penyewaan_id');
     }
 
     public function bagiHasil()
     {
-        return $this->hasOne(BagiHasil::class, 'pemesanan_id');
+        return $this->hasOne(Revenue::class, 'penyewaan_id');
+    }
+
+    /**
+     * Update status penyewaan yang sudah melewati tanggal selesai
+     * Dan update status motor menjadi tersedia
+     */
+    public static function updateExpiredRentals()
+    {
+        $today = now()->startOfDay();
+        
+        // Ambil semua penyewaan yang sudah lewat tanggal selesai tapi masih aktif
+        $expiredRentals = self::where('status', 'active')
+            ->whereDate('tanggal_selesai', '<', $today)
+            ->get();
+        
+        foreach ($expiredRentals as $rental) {
+            // Update status penyewaan menjadi completed
+            $rental->status = 'completed';
+            $rental->save();
+            
+            // Update status motor menjadi tersedia
+            if ($rental->motor) {
+                $rental->motor->status = 'tersedia';
+                $rental->motor->save();
+            }
+        }
+        
+        return $expiredRentals->count();
     }
 }

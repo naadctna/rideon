@@ -8,14 +8,26 @@
                 @else
                     <div class="w-full h-56 bg-gray-200 flex items-center justify-center">
                         <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            <circle cx="12" cy="12" r="9" stroke-width="2"></circle>
+                            <circle cx="12" cy="12" r="3" stroke-width="2"></circle>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
                     </div>
                 @endif
                 <div class="absolute top-2 right-2">
-                    <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-semibold">
-                        {{ ucfirst($motor->status) }}
-                    </span>
+                    @if($motor->status == 'tersedia')
+                        <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                            Tersedia
+                        </span>
+                    @elseif($motor->status == 'disewa')
+                        <span class="bg-red-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                            Disewa
+                        </span>
+                    @else
+                        <span class="bg-gray-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                            {{ ucfirst($motor->status) }}
+                        </span>
+                    @endif
                 </div>
             </div>
             <div class="p-4">
@@ -38,10 +50,17 @@
                                 Rp {{ number_format($motor->tarifRental->tarif_harian, 0, ',', '.') }}
                             </span>
                         </div>
-                        <a href="{{ route('renter.show-motor', $motor->id) }}" 
-                           class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200 text-center block">
-                            Lihat Detail
-                        </a>
+                        @if($motor->status == 'tersedia')
+                            <a href="{{ route('renter.show-motor', $motor->id) }}" 
+                               class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200 text-center block">
+                                Lihat Detail
+                            </a>
+                        @else
+                            <button disabled 
+                               class="w-full bg-gray-400 text-white font-medium py-2 px-4 rounded-md text-center cursor-not-allowed">
+                                Sedang Disewa
+                            </button>
+                        @endif
                     </div>
                 @else
                     <div class="border-t pt-3">
@@ -55,7 +74,9 @@
 @else
     <div class="text-center py-12 bg-gray-50 rounded-lg">
         <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            <circle cx="12" cy="12" r="9" stroke-width="2"></circle>
+            <circle cx="12" cy="12" r="3" stroke-width="2"></circle>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v6m0 6v6m9-9h-6m-6 0H3"></path>
         </svg>
         <h3 class="mt-4 text-lg font-medium text-gray-900">Tidak ada motor ditemukan</h3>
         <p class="mt-2 text-gray-500">Coba ubah filter atau lihat semua motor di halaman pencarian</p>

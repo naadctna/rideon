@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 0; }
+        .placeholder { 
+            width: 400px; 
+            height: 300px; 
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            color: white;
+            font-weight: bold;
+        }
+        .title { font-size: 24px; margin-bottom: 10px; }
+        .subtitle { font-size: 16px; opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <div class="placeholder">
+        <div class="title">Honda Vario</div>
+        <div class="subtitle">125cc Motor</div>
+    </div>
+    <script>
+        // Convert div to canvas and download as JPG
+        setTimeout(() => {
+            html2canvas(document.querySelector('.placeholder')).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'honda-vario-sample.jpg';
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+            });
+        }, 100);
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</body>
+</html>

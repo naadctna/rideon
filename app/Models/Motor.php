@@ -14,13 +14,20 @@ class Motor extends Model
         'merk',
         'tipe_cc',
         'no_plat',
+        'deskripsi',
         'status',
         'photo',
         'dokumen_kepemilikan',
+        'rejection_reason',
     ];
 
     // Relationships
     public function pemilik()
+    {
+        return $this->belongsTo(User::class, 'pemilik_id');
+    }
+
+    public function owner()
     {
         return $this->belongsTo(User::class, 'pemilik_id');
     }
@@ -33,5 +40,16 @@ class Motor extends Model
     public function penyewaan()
     {
         return $this->hasMany(Penyewaan::class);
+    }
+
+    // Accessors
+    public function getTarifHarianAttribute()
+    {
+        return $this->tarifRental ? $this->tarifRental->tarif_harian : 0;
+    }
+
+    public function getTipeDisplayAttribute()
+    {
+        return $this->tipe_cc . ' CC';
     }
 }

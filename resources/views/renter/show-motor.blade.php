@@ -29,7 +29,9 @@
                 @else
                     <div class="w-full h-96 bg-gray-200 flex items-center justify-center">
                         <svg class="w-24 h-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            <circle cx="12" cy="12" r="9" stroke-width="2"></circle>
+                            <circle cx="12" cy="12" r="3" stroke-width="2"></circle>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
                     </div>
                 @endif
@@ -132,10 +134,14 @@
                             <select name="metode_pembayaran" id="metode_pembayaran" required 
                                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base py-3 px-4">
                                 <option value="">Pilih Metode Pembayaran</option>
-                                <option value="cash">Bayar Tunai</option>
-                                <option value="transfer">Transfer Bank</option>
-                                <option value="ewallet">E-Wallet</option>
+                                <option value="dana">💳 DANA</option>
+                                <option value="ovo">💳 OVO</option>
+                                <option value="gopay">💳 GoPay</option>
+                                <option value="shopeepay">💳 ShopeePay</option>
+                                <option value="linkaja">💳 LinkAja</option>
+                                <option value="qris">💳 QRIS</option>
                             </select>
+                            <p class="mt-1 text-xs text-gray-500">✨ Pembayaran instan - Langsung berhasil!</p>
                         </div>
 
                         <!-- Estimasi Biaya -->

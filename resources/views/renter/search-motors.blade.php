@@ -6,8 +6,18 @@
 <div class="space-y-6">
     <!-- Header -->
     <div class="bg-white rounded-lg shadow-sm p-6">
-        <h1 class="text-2xl font-bold text-gray-900">Cari Motor</h1>
-        <p class="text-gray-600 mt-1">Temukan motor sesuai kebutuhan dan budget Anda</p>
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Cari Motor</h1>
+                <p class="text-gray-600 mt-1">Temukan motor sesuai kebutuhan dan budget Anda</p>
+            </div>
+            <a href="{{ route('renter.dashboard') }}" class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition duration-200">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Kembali
+            </a>
+        </div>
     </div>
 
     <!-- Search Filter -->
@@ -71,16 +81,33 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             @foreach($motors as $motor)
             <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-200">
-                <div class="aspect-w-16 aspect-h-12">
+                <div class="aspect-w-16 aspect-h-12 relative">
                     @if($motor->photo)
                         <img src="{{ asset('storage/' . $motor->photo) }}" alt="{{ $motor->merk }}" class="w-full h-48 object-cover">
                     @else
                         <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
                             <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                <circle cx="12" cy="12" r="9" stroke-width="2"></circle>
+                                <circle cx="12" cy="12" r="3" stroke-width="2"></circle>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v6m0 6v6m9-9h-6m-6 0H3"></path>
                             </svg>
                         </div>
                     @endif
+                    <div class="absolute top-2 right-2">
+                        @if($motor->status == 'tersedia')
+                            <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                                Tersedia
+                            </span>
+                        @elseif($motor->status == 'disewa')
+                            <span class="bg-red-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                                Disewa
+                            </span>
+                        @else
+                            <span class="bg-gray-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                                {{ ucfirst($motor->status) }}
+                            </span>
+                        @endif
+                    </div>
                 </div>
 
                 <div class="p-4">
@@ -119,13 +146,19 @@
                     @endif
 
                     <div class="flex space-x-2">
-                        <a href="{{ route('renter.show-motor', $motor->id) }}" class="flex-1 bg-gray-100 text-gray-700 text-center py-2 px-3 rounded-md text-sm font-medium hover:bg-gray-200 transition duration-200">
-                            Detail
-                        </a>
-                        @if($motor->tarifRental)
-                            <a href="{{ route('renter.show-motor', $motor->id) }}#rent-form" class="flex-1 bg-blue-600 text-white text-center py-2 px-3 rounded-md text-sm font-medium hover:bg-blue-700 transition duration-200">
-                                Sewa
+                        @if($motor->status == 'tersedia')
+                            <a href="{{ route('renter.show-motor', $motor->id) }}" class="flex-1 bg-gray-100 text-gray-700 text-center py-2 px-3 rounded-md text-sm font-medium hover:bg-gray-200 transition duration-200">
+                                Detail
                             </a>
+                            @if($motor->tarifRental)
+                                <a href="{{ route('renter.show-motor', $motor->id) }}#rent-form" class="flex-1 bg-blue-600 text-white text-center py-2 px-3 rounded-md text-sm font-medium hover:bg-blue-700 transition duration-200">
+                                    Sewa
+                                </a>
+                            @endif
+                        @else
+                            <button disabled class="flex-1 bg-gray-400 text-white text-center py-2 px-3 rounded-md text-sm font-medium cursor-not-allowed">
+                                Sedang Disewa
+                            </button>
                         @endif
                     </div>
                 </div>

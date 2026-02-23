@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Motor;
 use App\Models\Penyewaan;
+use App\Models\Revenue;
 use App\Models\Transaksi;
 use App\Models\TarifRental;
 use App\Models\User;
@@ -27,13 +28,16 @@ class RenterController extends BaseController
             return redirect()->route('login')->with('error', 'Access denied');
         }
 
+        // Auto-update status penyewaan yang sudah lewat tanggal selesai
+        Penyewaan::updateExpiredRentals();
+
         // Get statistics
         $totalRentals = Penyewaan::where('penyewa_id', $user->id)->count();
         $activeRentals = Penyewaan::where('penyewa_id', $user->id)
-                                 ->where('status', 'aktif')
+                                 ->where('status', 'active')
                                  ->count();
         $completedRentals = Penyewaan::where('penyewa_id', $user->id)
-                                    ->where('status', 'selesai')
+                                    ->where('status', 'completed')
                                     ->count();
         $totalSpent = Transaksi::whereHas('penyewaan', function($query) use ($user) {
             $query->where('penyewa_id', $user->id);
@@ -46,23 +50,23 @@ class RenterController extends BaseController
                                  ->limit(5)
                                  ->get();
 
-        // Get active rentals
+        // Get active rentals with owner contact info
         $activeRentalsList = Penyewaan::where('penyewa_id', $user->id)
-                                     ->where('status', 'aktif')
-                                     ->with(['motor.tarifRental'])
-                                     ->orderBy('tanggal_mulai', 'desc')
+                                     ->whereIn('status', ['approved', 'active'])
+                                     ->with(['motor.tarifRental', 'motor.pemilik'])
+                                     ->orderBy('created_at', 'desc')
                                      ->get();
 
-        // Get available motors for dashboard display
-        $availableMotors = Motor::where('status', 'tersedia')
+        // Get all motors for dashboard display (available and rented)
+        $availableMotors = Motor::whereIn('status', ['tersedia', 'disewa'])
                                 ->with(['tarifRental'])
                                 ->orderBy('created_at', 'desc')
                                 ->limit(8)
                                 ->get();
 
         // Get unique brands and types for filter
-        $merkOptions = Motor::where('status', 'tersedia')->distinct()->pluck('merk')->sort();
-        $tipeOptions = Motor::where('status', 'tersedia')->distinct()->pluck('tipe_cc')->sort();
+        $merkOptions = Motor::whereIn('status', ['tersedia', 'disewa'])->distinct()->pluck('merk')->sort();
+        $tipeOptions = Motor::whereIn('status', ['tersedia', 'disewa'])->distinct()->pluck('tipe_cc')->sort();
 
         return view('renter.dashboard', compact(
             'totalRentals', 
@@ -79,7 +83,7 @@ class RenterController extends BaseController
 
     public function filterMotors(Request $request)
     {
-        $query = Motor::where('status', 'tersedia')
+        $query = Motor::whereIn('status', ['tersedia', 'disewa'])
                      ->with(['tarifRental']);
 
         // Filter by merk with LIKE search
@@ -99,7 +103,7 @@ class RenterController extends BaseController
 
     public function searchMotors(Request $request)
     {
-        $query = Motor::where('status', 'tersedia')
+        $query = Motor::whereIn('status', ['tersedia', 'disewa'])
                      ->with(['tarifRental']);
 
         // Filter by merk
@@ -126,7 +130,7 @@ class RenterController extends BaseController
         }
 
         $motors = $query->paginate(12);
-        $merkOptions = Motor::where('status', 'tersedia')->distinct()->pluck('merk');
+        $merkOptions = Motor::whereIn('status', ['tersedia', 'disewa'])->distinct()->pluck('merk');
 
         return view('renter.search-motors', compact('motors', 'merkOptions'));
     }
@@ -154,7 +158,7 @@ class RenterController extends BaseController
             'tanggal_mulai' => 'required|date|after_or_equal:today',
             'tanggal_selesai' => 'required|date|after:tanggal_mulai',
             'tipe_durasi' => 'required|in:harian,mingguan,bulanan',
-            'metode_pembayaran' => 'required|in:cash,transfer,ewallet'
+            'metode_pembayaran' => 'required|in:dana,ovo,gopay,shopeepay,linkaja,qris'
         ]);
 
         // Calculate rental cost
@@ -193,67 +197,64 @@ class RenterController extends BaseController
                 'tanggal_mulai' => $request->tanggal_mulai,
                 'tanggal_selesai' => $request->tanggal_selesai,
                 'tipe_durasi' => $request->tipe_durasi,
-                'metode_pembayaran' => $request->metode_pembayaran,
-                'tarif_per_unit' => $tarif_per_unit,
-                'total_biaya' => $totalCost,
-                'status' => 'aktif'
+                'harga' => $totalCost,
+                'status' => 'active'
             ]);
 
-            // Update motor status to 'disewa'
+            // PEMBAYARAN OTOMATIS BERHASIL - Langsung bagi hasil
+            // 1. Buat transaksi (otomatis berhasil)
+            $transaksi = Transaksi::create([
+                'penyewaan_id' => $rental->id,
+                'jumlah' => $totalCost,
+                'metode_pembayaran' => $request->metode_pembayaran,
+                'status' => 'berhasil',
+                'tanggal' => now(),
+            ]);
+
+            // 2. Bagi hasil: 30% admin, 70% pemilik
+            $adminShare = $totalCost * 0.30;
+            $ownerShare = $totalCost * 0.70;
+
+            // 3. Cari admin
+            $admin = \App\Models\User::where('role', 'admin')->first();
+            
+            // 4. Buat record revenue untuk admin
+            if ($admin) {
+                Revenue::create([
+                    'transaksi_id' => $transaksi->id,
+                    'user_id' => $admin->id,
+                    'tipe' => 'admin',
+                    'jumlah' => $adminShare,
+                    'persentase' => 30.00,
+                    'status' => 'received',
+                    'keterangan' => 'Bagian admin dari rental #' . $rental->id
+                ]);
+            }
+
+            // 5. Buat record revenue untuk pemilik
+            Revenue::create([
+                'transaksi_id' => $transaksi->id,
+                'user_id' => $motor->pemilik_id,
+                'tipe' => 'pemilik',
+                'jumlah' => $ownerShare,
+                'persentase' => 70.00,
+                'status' => 'received',
+                'keterangan' => 'Bagian pemilik dari rental #' . $rental->id
+            ]);
+
+            // 6. Update status motor
             $motor->update(['status' => 'disewa']);
 
             \DB::commit();
+            
+            // Load relasi transaksi untuk ditampilkan
+            $rental->load('transaksi');
             
             return view('renter.booking-confirmation', compact('motor', 'rental'));
             
         } catch (\Exception $e) {
             \DB::rollback();
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memproses rental');
-        }
-    }
-
-    public function storeBooking(Request $request)
-    {
-        $request->validate([
-            'motor_id' => 'required|exists:motors,id',
-            'tanggal_mulai' => 'required|date',
-            'tanggal_selesai' => 'required|date|after:tanggal_mulai',
-            'tipe_durasi' => 'required|in:harian,mingguan,bulanan',
-            'harga' => 'required|numeric|min:0'
-        ]);
-
-        DB::beginTransaction();
-        try {
-            // Create rental
-            $rental = Penyewaan::create([
-                'penyewa_id' => Auth::id(),
-                'motor_id' => $request->motor_id,
-                'tanggal_mulai' => $request->tanggal_mulai,
-                'tanggal_selesai' => $request->tanggal_selesai,
-                'tipe_durasi' => $request->tipe_durasi,
-                'harga' => $request->harga,
-                'status' => 'menunggu_pembayaran'
-            ]);
-
-            // Create transaction
-            $transaction = Transaksi::create([
-                'penyewaan_id' => $rental->id,
-                'jumlah' => $request->harga,
-                'status' => 'pending',
-                'metode_pembayaran' => 'transfer'
-            ]);
-
-            // Update motor status
-            Motor::where('id', $request->motor_id)->update(['status' => 'disewa']);
-
-            DB::commit();
-
-            return redirect()->route('renter.payment', $transaction->id)
-                           ->with('success', 'Booking berhasil dibuat. Silakan lakukan pembayaran.');
-
-        } catch (\Exception $e) {
-            DB::rollback();
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat membuat booking');
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memproses rental: ' . $e->getMessage());
         }
     }
 
@@ -282,5 +283,44 @@ class RenterController extends BaseController
                            ->paginate(10);
 
         return view('renter.my-rentals', compact('rentals'));
+    }
+
+    public function getRentalDetails($id)
+    {
+        $rental = Penyewaan::with(['motor.tarifRental', 'motor.pemilik', 'transaksi', 'penyewa'])
+                          ->where('id', $id)
+                          ->where('penyewa_id', Auth::id())
+                          ->firstOrFail();
+
+        return response()->json([
+            'success' => true,
+            'rental' => $rental
+        ]);
+    }
+
+    public function downloadInvoice($id)
+    {
+        $rental = Penyewaan::with(['motor.tarifRental', 'motor.pemilik', 'transaksi', 'penyewa'])
+                          ->where('id', $id)
+                          ->where('penyewa_id', Auth::id())
+                          ->firstOrFail();
+
+        // Calculate duration
+        $startDate = \Carbon\Carbon::parse($rental->tanggal_mulai);
+        $endDate = \Carbon\Carbon::parse($rental->tanggal_selesai);
+        $duration = $startDate->diffInDays($endDate) + 1;
+
+        $data = [
+            'rental' => $rental,
+            'duration' => $duration,
+            'date' => now()->format('d/m/Y')
+        ];
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('renter.invoice-pdf', $data);
+        $pdf->setPaper('A4', 'portrait');
+
+        $filename = 'invoice_' . str_pad($rental->id, 6, '0', STR_PAD_LEFT) . '_' . date('Ymd') . '.pdf';
+
+        return $pdf->download($filename);
     }
 }

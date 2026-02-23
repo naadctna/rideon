@@ -78,6 +78,25 @@ class MotorSeeder extends Seeder
                 'tarif_mingguan' => 650000,
                 'tarif_bulanan' => 2600000,
             ],
+            // Motor pending untuk testing verifikasi
+            [
+                'merk' => 'Honda Vario Test',
+                'no_plat' => 'B 1111 TST',
+                'tipe_cc' => '125',
+                'status' => 'pending',
+                'tarif_harian' => null,
+                'tarif_mingguan' => null,
+                'tarif_bulanan' => null,
+            ],
+            [
+                'merk' => 'Yamaha Mio Test',
+                'no_plat' => 'B 2222 TST',
+                'tipe_cc' => '110',
+                'status' => 'pending',
+                'tarif_harian' => null,
+                'tarif_mingguan' => null,
+                'tarif_bulanan' => null,
+            ],
             [
                 'merk' => 'Honda Scoopy',
                 'no_plat' => 'B 6789 STU',
@@ -108,13 +127,15 @@ class MotorSeeder extends Seeder
                 'status' => $motorData['status'],
             ]);
 
-            // Create tariff
-            TarifRental::create([
-                'motor_id' => $motor->id,
-                'tarif_harian' => $motorData['tarif_harian'],
-                'tarif_mingguan' => $motorData['tarif_mingguan'],
-                'tarif_bulanan' => $motorData['tarif_bulanan'],
-            ]);
+            // Create tariff only if motor is not pending
+            if ($motorData['status'] !== 'pending') {
+                TarifRental::create([
+                    'motor_id' => $motor->id,
+                    'tarif_harian' => $motorData['tarif_harian'],
+                    'tarif_mingguan' => $motorData['tarif_mingguan'],
+                    'tarif_bulanan' => $motorData['tarif_bulanan'],
+                ]);
+            }
         }
 
         $this->command->info('Motor seeder completed successfully!');

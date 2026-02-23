@@ -82,19 +82,32 @@
                 <dt class="text-sm font-medium text-gray-500">Metode Pembayaran</dt>
                 <dd class="mt-1 text-sm text-gray-900">
                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
-                        @switch($rental->metode_pembayaran)
-                            @case('cash')
-                                Bayar Tunai
-                                @break
-                            @case('transfer')
-                                Transfer Bank
-                                @break
-                            @case('ewallet')
-                                E-Wallet
-                                @break
-                            @default
-                                {{ ucfirst($rental->metode_pembayaran) }}
-                        @endswitch
+                        @if($rental->transaksi)
+                            @switch($rental->transaksi->metode_pembayaran)
+                                @case('dana')
+                                    💳 DANA
+                                    @break
+                                @case('ovo')
+                                    💳 OVO
+                                    @break
+                                @case('gopay')
+                                    💳 GoPay
+                                    @break
+                                @case('shopeepay')
+                                    💳 ShopeePay
+                                    @break
+                                @case('linkaja')
+                                    💳 LinkAja
+                                    @break
+                                @case('qris')
+                                    💳 QRIS
+                                    @break
+                                @default
+                                    {{ ucfirst($rental->transaksi->metode_pembayaran) }}
+                            @endswitch
+                        @else
+                            -
+                        @endif
                     </span>
                 </dd>
             </div>
@@ -112,6 +125,21 @@
                     $start = \Carbon\Carbon::parse($rental->tanggal_mulai);
                     $end = \Carbon\Carbon::parse($rental->tanggal_selesai);
                     $days = $end->diffInDays($start) + 1;
+                    
+                    // Calculate tarif per unit based on rental type
+                    $tarifPerUnit = 0;
+                    $unitCount = 0;
+                    
+                    if ($rental->tipe_durasi == 'harian') {
+                        $unitCount = $days;
+                        $tarifPerUnit = $rental->harga / $days;
+                    } elseif ($rental->tipe_durasi == 'mingguan') {
+                        $unitCount = ceil($days / 7);
+                        $tarifPerUnit = $rental->harga / $unitCount;
+                    } elseif ($rental->tipe_durasi == 'bulanan') {
+                        $unitCount = ceil($days / 30);
+                        $tarifPerUnit = $rental->harga / $unitCount;
+                    }
                 @endphp
                 {{ $days }} hari
             </span>
@@ -120,7 +148,7 @@
         <div class="flex justify-between items-center mb-4">
             <span class="text-sm text-blue-700">Tarif per {{ $rental->tipe_durasi }}:</span>
             <span class="text-sm font-medium text-blue-900">
-                Rp {{ number_format($rental->tarif_per_unit, 0, ',', '.') }}
+                Rp {{ number_format($tarifPerUnit, 0, ',', '.') }}
             </span>
         </div>
         
@@ -129,7 +157,7 @@
         <div class="flex justify-between items-center">
             <span class="text-lg font-bold text-blue-900">Total Pembayaran:</span>
             <span class="text-xl font-bold text-blue-900">
-                Rp {{ number_format($rental->total_biaya, 0, ',', '.') }}
+                Rp {{ number_format($rental->harga, 0, ',', '.') }}
             </span>
         </div>
         

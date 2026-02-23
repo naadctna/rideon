@@ -11,7 +11,7 @@
                 <h1 class="text-2xl font-bold text-gray-900">Detail Motor</h1>
                 <p class="text-gray-600 mt-1">Informasi lengkap motor {{ $motor->merk }}</p>
             </div>
-            <a href="{{ route('owner.dashboard') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-md transition duration-200">
+            <a href="{{ route('owner.motors') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-md transition duration-200">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                 </svg>
@@ -31,7 +31,9 @@
                 @else
                     <div class="w-full h-64 bg-gray-200 rounded-lg flex items-center justify-center">
                         <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            <circle cx="12" cy="12" r="9" stroke-width="2"></circle>
+                            <circle cx="12" cy="12" r="3" stroke-width="2"></circle>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
                     </div>
                 @endif
